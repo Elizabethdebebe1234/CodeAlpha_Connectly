@@ -595,3 +595,125 @@ input, textarea {
   color: white;
   cursor: pointer;
 }
+
+
+.profile-summary {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.profile-avatar {
+  width: 65px;
+  height: 65px;
+  margin: 0 auto 12px;
+  font-size: 24px;
+}
+
+.profile-summary h3 {
+  margin: 5px 0;
+}
+
+.profile-summary p {
+  color: #89919a;
+  font-size: 13px;
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #edf0f1;
+  padding-top: 15px;
+  margin-top: 15px;
+}
+
+.profile-stats strong,
+.profile-stats small {
+  display: block;
+}
+
+.profile-stats strong {
+  color: #17634c;
+  font-size: 19px;
+}
+
+.profile-stats small {
+  color: #89919a;
+  font-size: 12px;
+}
+.side-nav button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.side-nav button.nav-active {
+  background: #e8f2ed;
+  color: #17634c;
+  font-weight: 700;
+}
+
+.explore-search {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #e3e8e5;
+  border-radius: 12px;
+  margin: 15px 0 25px;
+  font-size: 14px;
+}
+
+.my-profile {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.profile-avatar {
+  width: 75px;
+  height: 75px;
+  margin: 10px auto;
+  font-size: 28px;
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: center;
+  gap: 35px;
+  margin: 20px 0;
+}
+
+.profile-stats button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.profile-stats strong,
+.profile-stats small {
+  display: block;
+}
+
+.profile-stats strong {
+  font-size: 22px;
+  color: #17634c;
+}
+
+.profile-stats small {
+  color: #89919a;
+}
+
+.people-list {
+  text-align: left;
+  margin: 20px 0;
+}
+
+.people-list .suggestion {
+  padding: 10px 0;
+}
+
+.notification-item {
+  border-bottom: 1px solid #edf0f1;
+  padding: 14px 0;
+}
