@@ -1,3 +1,4 @@
+
 const API_URL = "http://localhost:5000/api";
 
 export async function apiRequest(endpoint, options = {}) {
@@ -7,7 +8,7 @@ export async function apiRequest(endpoint, options = {}) {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });

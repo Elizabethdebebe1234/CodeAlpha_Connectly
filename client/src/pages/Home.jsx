@@ -1,71 +1,107 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../services/api";
 
 function Home() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("connectly_user") || "{}");
 
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      username: "@sarahj",
-      time: "2 hours ago",
-      content: "Just started my new journey in web development! Excited to learn and build amazing things. 🚀",
-      likes: 24,
-      comments: 8,
-    },
-    {
-      id: 2,
-      name: "Michael Brown",
-      username: "@michaelb",
-      time: "4 hours ago",
-      content: "Great things happen when creativity meets technology. Keep building, keep growing! 💻",
-      likes: 16,
-      comments: 3,
-    },
-  ]);
-
+  const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
-  const [likedPosts, setLikedPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [commentDrafts, setCommentDrafts] = useState({});
 
-  const handlePost = (e) => {
-    e.preventDefault();
-
-    if (!newPost.trim()) return;
-
-    const post = {
-      id: Date.now(),
-      name: user.name || "You",
-      username: "@you",
-      time: "Just now",
-      content: newPost,
-      likes: 0,
-      comments: 0,
-    };
-
-    setPosts([post, ...posts]);
-    setNewPost("");
+  const loadPosts = async () => {
+    try {
+      const data = await apiRequest("/posts");
+      setPosts(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLike = (id) => {
-    const alreadyLiked = likedPosts.includes(id);
+  useEffect(() => {
+    loadPosts();
+  }, []);
 
-    setLikedPosts((previous) =>
-      alreadyLiked
-        ? previous.filter((postId) => postId !== id)
-        : [...previous, id]
-    );
+  const handlePost = async (e) => {
+    e.preventDefault();
+    if (!newPost.trim()) return;
+
+    try {
+      const post = await apiRequest("/posts", {
+        method: "POST",
+        body: JSON.stringify({ content: newPost }),
+      });
+
+      setPosts((previous) => [post, ...previous]);
+      setNewPost("");
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleLike = async (postId) => {
+    try {
+      const result = await apiRequest(`/posts/${postId}/like`, {
+        method: "POST",
+      });
+
+      setPosts((previous) =>
+        previous.map((post) =>
+          post._id === postId
+            ? {
+                ...post,
+                likes: result.liked
+                  ? [...post.likes, user.id]
+                  : post.likes.filter((id) =>
+                      (typeof id === "string" ? id : id._id) !== user.id
+                    ),
+              }
+            : post
+        )
+      );
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleComment = async (e, postId) => {
+  e.preventDefault();
+
+  const text = commentDrafts[postId]?.trim();
+  if (!text) return;
+
+  try {
+    const comment = await apiRequest(`/posts/${postId}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    });
 
     setPosts((previous) =>
       previous.map((post) =>
-        post.id === id
-          ? { ...post, likes: post.likes + (alreadyLiked ? -1 : 1) }
+        post._id === postId
+          ? { ...post, comments: [...post.comments, comment] }
           : post
       )
     );
-  };
+
+    setCommentDrafts((previous) => ({
+      ...previous,
+      [postId]: "",
+    }));
+
+    setError("");
+  } catch (err) {
+    setError(err.message);
+  }
+};
+        
 
   const handleLogout = () => {
     localStorage.removeItem("connectly_token");
@@ -88,15 +124,15 @@ function Home() {
 
         <div className="sidebar-bottom">
           <div className="mini-profile">
-            <div className="avatar">{(user.name || "U").charAt(0).toUpperCase()}</div>
+            <div className="avatar">
+              {(user.name || "U").charAt(0).toUpperCase()}
+            </div>
             <div>
               <strong>{user.name || "User"}</strong>
               <small>@{(user.name || "user").toLowerCase().replace(/\s+/g, "")}</small>
             </div>
           </div>
-          <button className="logout-btn" onClick={handleLogout}>
-            Log out
-          </button>
+          <button className="logout-btn" onClick={handleLogout}>Log out</button>
         </div>
       </aside>
 
@@ -131,45 +167,91 @@ function Home() {
           </div>
         </form>
 
+        {error && <p className="error-message">{error}</p>}
+
         <div className="section-heading">
           <h2>Your Feed</h2>
           <span>Latest posts</span>
         </div>
 
-        {posts.map((post) => (
-          <article className="post-card" key={post.id}>
-            <div className="post-top">
-              <div className="avatar">{post.name.charAt(0).toUpperCase()}</div>
-              <div className="post-author">
-                <strong>{post.name}</strong>
-                <small>{post.username} · {post.time}</small>
-              </div>
-              <button className="more-btn" aria-label="More options">•••</button>
-            </div>
+        {loading ? (
+          <p>Loading posts...</p>
+        ) : posts.length === 0 ? (
+          <p>No posts yet. Be the first to share something!</p>
+        ) : (
+          posts.map((post) => {
+            const liked = post.likes.some(
+              (id) => (typeof id === "string" ? id : id._id) === user.id
+            );
 
-            <p className="post-content">{post.content}</p>
+            return (
+              <article className="post-card" key={post._id}>
+                <div className="post-top">
+                  <div className="avatar">
+                    {(post.author?.name || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="post-author">
+                    <strong>{post.author?.name || "Unknown user"}</strong>
+                    <small>{new Date(post.createdAt).toLocaleString()}</small>
+                  </div>
+                </div>
 
-            <div className="post-stats">
-              <span>{post.likes} likes</span>
-              <span>{post.comments} comments</span>
-            </div>
+                <p className="post-content">{post.content}</p>
 
-            <div className="post-actions">
-              <button
-                className={likedPosts.includes(post.id) ? "liked" : ""}
-                onClick={() => handleLike(post.id)}
-              >
-                {likedPosts.includes(post.id) ? "♥ Liked" : "♡ Like"}
-              </button>
-              <button onClick={() => alert("Comments are coming soon!")}>
-                ◯ Comment
-              </button>
-              <button onClick={() => alert("Sharing is coming soon!")}>
-                ↗ Share
-              </button>
-            </div>
-          </article>
-        ))}
+                <div className="post-stats">
+                  <span>{post.likes.length} likes</span>
+                  <span>{post.comments.length} comments</span>
+                </div>
+
+                <div className="post-actions">
+                  <button
+                    className={liked ? "liked" : ""}
+                    onClick={() => handleLike(post._id)}
+                  >
+                    {liked ? "♥ Liked" : "♡ Like"}
+                  </button>
+                 <button
+  onClick={() =>
+    document.getElementById(`comment-${post._id}`)?.focus()
+  }
+>
+  ◯ Comment
+</button>
+                  <button onClick={() => alert("Sharing coming soon!")}>
+                    ↗ Share
+                  </button>
+                </div>
+
+                <div className="comments-section">
+  {post.comments.map((comment) => (
+    <div className="comment-item" key={comment._id}>
+      <strong>{comment.user?.name || "User"}</strong>
+      <p>{comment.text}</p>
+    </div>
+  ))}
+
+  <form
+    className="comment-form"
+    onSubmit={(e) => handleComment(e, post._id)}
+  >
+    <input
+      id={`comment-${post._id}`}
+      value={commentDrafts[post._id] || ""}
+      onChange={(e) =>
+        setCommentDrafts((previous) => ({
+          ...previous,
+          [post._id]: e.target.value,
+        }))
+      }
+      placeholder="Write a comment..."
+    />
+    <button type="submit">Send</button>
+  </form>
+</div>
+              </article>
+            );
+          })
+        )}
       </main>
 
       <aside className="right-panel">
@@ -191,7 +273,7 @@ function Home() {
                 <strong>{person[1]}</strong>
                 <small>{person[2]}</small>
               </div>
-              <button onClick={() => alert("Following feature is coming soon!")}>
+              <button onClick={() => alert("Following coming soon!")}>
                 Follow
               </button>
             </div>
