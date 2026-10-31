@@ -8,14 +8,23 @@ const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
+
 const cors = require("cors");
 
 const allowedOrigins = [
   "http://localhost:5173",
   "https://connectly-ashen-three.vercel.app",
-  "https://connectly-gsa4u62ud-elizabethdebebe1234s-projects.vercel.app",
-  "https://connectly-cpqldw49f-elizabethdebebe1234s-projects.vercel.app",
 ];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
+
+
 
 app.use(
   cors({
