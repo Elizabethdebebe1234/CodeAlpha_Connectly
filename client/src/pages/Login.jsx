@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiRequest } from "../services/api";
@@ -19,13 +20,17 @@ export default function Login() {
         body: JSON.stringify(form),
       });
 
+      if (!data.token) {
+        throw new Error("Login succeeded but no authentication token was returned.");
+      }
+
       localStorage.setItem("connectly_token", data.token);
       localStorage.setItem("connectly_user", JSON.stringify(data.user));
 
-      navigate("/");
+      // Reload the app so App.jsx reads the newly saved token.
+      window.location.assign("/");
     } catch (err) {
-      setError(err.message);
-    } finally {
+      setError(err.message || "Unable to sign in. Please try again.");
       setLoading(false);
     }
   };
@@ -54,11 +59,13 @@ export default function Login() {
 
         {error && <p className="error">{error}</p>}
 
-        <button disabled={loading}>
+        <button type="submit" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}
         </button>
 
-        <p>New here? <Link to="/register">Create an account</Link></p>
+        <p>
+          New here? <Link to="/register">Create an account</Link>
+        </p>
       </form>
     </div>
   );
