@@ -1,13 +1,35 @@
 require("dotenv").config();
 
 const express = require("express");
-const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const postRoutes = require("./routes/postRoutes");
 const userRoutes = require("./routes/userRoutes");
 
 const app = express();
+
+const cors = require("cors");
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://connectly-ashen-three.vercel.app",
+  "https://connectly-gsa4u62ud-elizabethdebebe1234s-projects.vercel.app",
+  "https://connectly-cpqldw49f-elizabethdebebe1234s-projects.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
+
 
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:5173"
